@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>¡Para Mariángel!</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Canvas Confetti CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Great+Vibes&family=Quicksand:wght@600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 50%, #b5e2fa 100%);
+            overflow-x: hidden;
+        }
+
+        /* Envoltorio para efecto de cámara/zoom */
+        #viewport-wrapper {
+            transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+            transform-origin: center 40%;
+            will-change: transform;
+        }
+
+        .font-title-cursive {
+            font-family: 'Great Vibes', cursive;
+        }
+
+        .font-title-cinzel {
+            font-family: 'Cinzel', serif;
+        }
+
+        /* Título con resplandor dorado */
+        .golden-glow {
+            color: #FFF9E6;
+            text-shadow: 
+                0 0 10px rgba(255, 215, 0, 0.8),
+                0 0 20px rgba(218, 165, 32, 0.6),
+                2px 4px 6px rgba(0, 0, 0, 0.25);
+        }
+
+        /* Animaciones */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes popIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.3) translateY(20px);
+            }
+            70% {
+                transform: scale(1.03) translateY(-5px);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .animate-float {
+            animation: float 4s ease-in-out infinite;
+        }
+
+        .speech-bubble-pop {
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* Transición suave para cambiar texto */
+        .fade-text {
+            transition: opacity 0.25s ease-in-out, transform 0.25s ease-in-out;
+        }
+        .fade-out {
+            opacity: 0;
+            transform: translateY(-5px);
+        }
+        .fade-in {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Efectos en Mérida al pasar el cursor */
+        .character-container {
+            transition: transform 0.3s ease, filter 0.3s ease;
+        }
+        .character-container:hover {
+            transform: scale(1.03);
+            filter: drop-shadow(0 12px 20px rgba(13, 89, 129, 0.3));
+        }
+
+        /* Partículas flotantes */
+        .particle {
+            position: absolute;
+            pointer-events: none;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 50%;
+            animation: rise 6s infinite ease-in;
+        }
+
+        @keyframes rise {
+            0% {
+                opacity: 0;
+                transform: translateY(100vh) scale(0);
+            }
+            50% {
+                opacity: 0.8;
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-10vh) scale(1.5);
+            }
+        }
+
+        /* Elementos animados flotantes de broma y celebración (Página 7) */
+        .floating-item {
+            position: fixed;
+            bottom: -50px;
+            font-size: 2.2rem;
+            pointer-events: none;
+            z-index: 100;
+            animation: floatUp 3.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(0.5); opacity: 1; }
+            100% { transform: translateY(-110vh) scale(1.8) rotate(360deg); opacity: 0; }
+        }
+
+        /* Animación para los emojis de risa al presionar "Ya lo dije" */
+        .laugh-emoji {
+            position: fixed;
+            font-size: 4rem;
+            pointer-events: none;
+            z-index: 200;
+            animation: laughPop 1.5s ease-out forwards;
+        }
+
+        @keyframes laughPop {
+            0% { transform: scale(0) rotate(0deg); opacity: 0; }
+            50% { transform: scale(1.6) rotate(15deg); opacity: 1; }
+            100% { transform: scale(2.2) translateY(-120px) rotate(-15deg); opacity: 0; }
+        }
+
+        /* Banner animado para la broma */
+        .joke-banner {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.5);
+            z-index: 250;
+            opacity: 0;
+            pointer-events: none;
+            animation: popBanner 2.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        @keyframes popBanner {
+            0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
+            20% { transform: translate(-50%, -50%) scale(1.05); opacity: 1; }
+            80% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-between p-4 sm:p-6 relative select-none">
+
+    <!-- Fondo con luces/partículas flotantes -->
+    <div id="particles-container" class="absolute inset-0 overflow-hidden pointer-events-none z-0"></div>
+
+    <!-- ENVOLTORIO PRINCIPAL QUE RECIBE EL ZOOM DE CÁMARA -->
+    <div id="viewport-wrapper" class="w-full flex-1 flex flex-col items-center justify-between z-10">
+
+        <!-- ENCABEZADO / TÍTULO -->
+        <header class="text-center mt-2 sm:mt-4 z-10 animate-float">
+            <h1 class="font-title-cursive text-5xl sm:text-7xl lg:text-8xl golden-glow tracking-wide px-2">
+                ¡Para Mariángel!
+            </h1>
+            <p class="text-sky-900/70 text-xs sm:text-sm uppercase tracking-widest font-bold mt-1 font-title-cinzel">
+                ✦ Toca a Mérida para escuchar sus palabras ✦
+            </p>
+        </header>
+
+        <!-- CONTENEDOR PRINCIPAL DEL PERSONAJE -->
+        <main class="relative flex-1 flex items-center justify-center my-4 z-10 w-full max-w-lg">
+            
+            <!-- GLOBO DE DIÁLOGO -->
+            <div id="speechBubble" 
+                 class="hidden absolute -top-20 sm:-top-24 left-1/2 -translate-x-1/2 z-30 w-72 sm:w-96 cursor-pointer" 
+                 onclick="nextPage()">
+                
+                <div class="relative bg-white text-slate-800 p-5 sm:p-6 rounded-3xl shadow-2xl border-4 border-amber-400 speech-bubble-pop flex flex-col justify-between min-h-[140px]">
+                    
+                    <!-- Contenido del texto animado -->
+                    <div id="textContainer" class="fade-text flex-1 flex flex-col justify-center items-center my-auto">
+                        <p id="dialogueText" class="text-center font-bold text-lg sm:text-2xl text-emerald-950 leading-snug">
+                            <!-- El texto se carga dinámicamente mediante JS -->
+                        </p>
+
+                        <!-- Botón interactivo especial de la página 7 -->
+                        <div id="specialBtnContainer" class="hidden mt-4">
+                            <button onclick="triggerLaughter(event)" class="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-extrabold py-2 px-5 rounded-full shadow-lg transform hover:scale-105 active:scale-95 transition-all border-2 border-white text-sm sm:text-base">
+                                🎤 Ya lo dije
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Indicador visual de página en la parte inferior del globo -->
+                    <div class="flex items-center justify-between border-t border-amber-100 pt-2 mt-3 text-xs font-bold text-amber-700">
+                        <span id="pageIndicator" class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">Pág 1/7</span>
+                        <span id="continueHint" class="flex items-center gap-1 animate-pulse">Toca para continuar ➔</span>
+                    </div>
+
+                    <!-- Cola del Globo centrada apuntando hacia abajo -->
+                    <div class="absolute -bottom-4 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-t-[16px] border-t-amber-400"></div>
+                    <div class="absolute -bottom-[11px] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[9px] border-l-transparent border-r-[9px] border-r-transparent border-t-[13px] border-t-white"></div>
+                </div>
+            </div>
+
+            <!-- PERSONAJE MÉRIDA (IMAGEN PNG) -->
+            <div id="meridaCharacter" 
+                 class="character-container cursor-pointer w-64 sm:w-80 md:w-96 h-auto relative flex justify-center items-center"
+                 onclick="startDialogue()"
+                 title="¡Haz clic en Mérida!">
+                
+                <img src="https://files.catbox.moe/pmmryd.png" 
+                     alt="Mérida - Valiente" 
+                     class="w-full h-auto max-h-[58vh] object-contain drop-shadow-2xl select-none"
+                     onerror="this.onerror=null; this.src='https://placehold.co/400x600/144d37/ffffff?text=Merida';" />
+            </div>
+
+        </main>
+
+        <!-- PIE DE PÁGINA DECORATIVO -->
+        <footer class="z-10 text-center pb-2">
+            <button id="actionBtn" onclick="handleBtnClick()" class="bg-amber-500 hover:bg-amber-400 text-amber-950 font-bold py-2.5 px-6 rounded-full shadow-lg hover:shadow-amber-500/50 transition-all transform hover:-translate-y-0.5 active:translate-y-0 text-sm sm:text-base border-2 border-amber-200">
+                ✨ Presiona aquí para hablar con Mérida ✨
+            </button>
+        </footer>
+
+    </div>
+
+    <!-- LÓGICA JAVASCRIPT Y EFECTOS ESPECIALES -->
+    <script>
+        /* ================================================================= */
+        /* ✏️ PÁGINAS DE TEXTO DEL DIÁLOGO (7 PÁGINAS)                        */
+        /* ================================================================= */
+        const dialogPages = [
+            "¡Feliz Cumpleaños a la Pelo e Cobre mas Loca que existe! 🎂✨",
+            "¡Estoy muy emocionada por tener de gemela a alguien tan especial como tu, No solo eres *Valiente*, sino que eres capaz, fuerte, perspicaz, amorosa y comprensiva...✨ ",
+            "y hoy que es el dia de tu cumpleaños, quiero recordarte que todos los que te rodean estan mas que agradecidos por ser parte de tu vida...🎂 ",
+            "desde tu Esposo el MostroTaxi, Pasando por tus Santi y Mateo... hasta llegar al Oso, que aunque no te conoce de toda la vida, esta muy agradecido de que seas parte de ella! 🏹🎯",
+            "Por eso en este dia, quiere agradecerte por medio de mi, por estar ahi siempre, por ser una buena amiga, una buena esposa y una buena madre.🎯",
+            "Bueno, a el solo le consta lo de buena amiga pej, pero esta seguro de que tambien eres una buena esposa, una buena madre, una buena hija🏹",
+            "🎉 ¡Felicidades! El oso te va a regalar 100,000 bolívares. Para aceptarlos, di <strong>'acepto'</strong> al micrófono. 🎙️🐻"
+        ];
+        /* ================================================================= */
+
+        let currentPage = 0;
+        let isDialogOpen = false;
+        let isChangingPage = false;
+
+        // Sonido de fanfarria con Web Audio API (sin archivos externos)
+        function playFanfareSound() {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                const ctx = new AudioContext();
+                const notes = [
+                    { f: 523.25, duration: 0.15 }, // C5
+                    { f: 659.25, duration: 0.15 }, // E5
+                    { f: 783.99, duration: 0.15 }, // G5
+                    { f: 1046.50, duration: 0.6 }  // C6
+                ];
+                let now = ctx.currentTime;
+                notes.forEach(note => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.value = note.f;
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + note.duration);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + note.duration);
+                    now += note.duration * 0.8;
+                });
+            } catch(e) {
+                console.log("Audio Context no disponible.");
+            }
+        }
+
+        // Celebración de la Página 7: Confeti, fanfarria y bromas/corazones flotantes
+        function triggerCelebration() {
+            playFanfareSound();
+
+            // Disparo de Confeti masivo
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 120,
+                    spread: 80,
+                    origin: { y: 0.6 }
+                });
+
+                setTimeout(() => {
+                    confetti({
+                        particleCount: 80,
+                        angle: 60,
+                        spread: 55,
+                        origin: { x: 0 }
+                    });
+                    confetti({
+                        particleCount: 80,
+                        angle: 120,
+                        spread: 55,
+                        origin: { x: 1 }
+                    });
+                }, 250);
+            }
+
+            // Lluvia flotante de corazones, osos y billetes
+            const emojis = ['💖', '💕', '❤️', '💸', '💰', '🐻', '✨', '🎈', '🎯'];
+            for (let i = 0; i < 24; i++) {
+                setTimeout(() => {
+                    const item = document.createElement('div');
+                    item.className = 'floating-item';
+                    item.innerText = emojis[Math.floor(Math.random() * emojis.length)];
+                    item.style.left = `${Math.random() * 90 + 5}%`;
+                    item.style.animationDuration = `${Math.random() * 2 + 2}s`;
+                    document.body.appendChild(item);
+                    setTimeout(() => item.remove(), 3200);
+                }, i * 110);
+            }
+        }
+
+        // Sintetizador de risas usando Web Audio API
+        function playLaughterSound() {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                const ctx = new AudioContext();
+                
+                // Genera carcajadas simular ("ja-ja-ja-ja")
+                const haCount = 6;
+                let now = ctx.currentTime;
+                
+                for (let i = 0; i < haCount; i++) {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    
+                    osc.type = 'sawtooth';
+                    // Variación de frecuencia descendente para simular la risa
+                    const startFreq = 450 + Math.random() * 60;
+                    osc.frequency.setValueAtTime(startFreq, now);
+                    osc.frequency.exponentialRampToValueAtTime( startFreq * 0.5, now + 0.12 );
+
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+
+                    osc.start(now);
+                    osc.stop(now + 0.12);
+                    
+                    // Intervalo entre carcajadas
+                    now += 0.14 + (Math.random() * 0.03);
+                }
+            } catch(e) {
+                console.log("Audio Context no disponible para la risa.");
+            }
+        }
+
+        // Reacción al pulsar "Ya lo dije": Emojis de risa, sonido y cartel de broma
+        function triggerLaughter(e) {
+            if (e) e.stopPropagation();
+            
+            // Reprodur sonido de risa sintetizado
+            playLaughterSound();
+
+            // Mostrar el cartel emergente con el mensaje de broma
+            const banner = document.createElement('div');
+            banner.className = 'joke-banner bg-amber-400 text-amber-950 px-6 py-4 rounded-3xl shadow-2xl border-4 border-white text-center text-xl sm:text-2xl font-black max-w-xs sm:max-w-md';
+            banner.innerHTML = '¡Caíste en una broma, pero aún así te quiero mucho! ❤️🐻';
+            document.body.appendChild(banner);
+            setTimeout(() => banner.remove(), 2600);
+            
+            // Explotar emojis de risa por pantalla
+            const laughEmojis = ['🤣', '😂', '😆', '🤪', '💀'];
+            for (let i = 0; i < 20; i++) {
+                setTimeout(() => {
+                    const emoji = document.createElement('div');
+                    emoji.className = 'laugh-emoji';
+                    emoji.innerText = laughEmojis[Math.floor(Math.random() * laughEmojis.length)];
+                    emoji.style.left = `${Math.random() * 80 + 10}%`;
+                    emoji.style.top = `${Math.random() * 60 + 20}%`;
+                    document.body.appendChild(emoji);
+                    setTimeout(() => emoji.remove(), 1600);
+                }, i * 65);
+            }
+        }
+
+        // Inicia la secuencia de diálogo y zoom
+        function startDialogue() {
+            if (isDialogOpen) {
+                nextPage();
+                return;
+            }
+
+            currentPage = 0;
+            isDialogOpen = true;
+            renderCurrentPage();
+
+            const bubble = document.getElementById('speechBubble');
+            const wrapper = document.getElementById('viewport-wrapper');
+            const actionBtn = document.getElementById('actionBtn');
+
+            bubble.classList.remove('hidden');
+            actionBtn.innerText = "Siguiente mensaje ➔";
+
+            // Transición suave de cámara (Zoom centrado hacia el diálogo)
+            setTimeout(() => {
+                const isMobile = window.innerWidth < 640;
+                const zoomScale = isMobile ? 1.4 : 1.55;
+                const translateY = isMobile ? '12vh' : '14vh';
+                wrapper.style.transform = `scale(${zoomScale}) translateY(${translateY})`;
+            }, 50);
+        }
+
+        // Avanza a la siguiente página o cierra al finalizar
+        function nextPage() {
+            if (!isDialogOpen || isChangingPage) return;
+
+            if (currentPage < dialogPages.length - 1) {
+                isChangingPage = true;
+                const textContainer = document.getElementById('textContainer');
+                
+                // Efecto Fade Out del texto actual
+                textContainer.classList.add('fade-out');
+
+                setTimeout(() => {
+                    currentPage++;
+                    renderCurrentPage();
+                    // Efecto Fade In del nuevo texto
+                    textContainer.classList.remove('fade-out');
+                    isChangingPage = false;
+                }, 250);
+
+            } else {
+                closeDialogue();
+            }
+        }
+
+        // Muestra el texto e indicador correspondientes
+        function renderCurrentPage() {
+            const dialogueText = document.getElementById('dialogueText');
+            const pageIndicator = document.getElementById('pageIndicator');
+            const specialBtnContainer = document.getElementById('specialBtnContainer');
+            const continueHint = document.getElementById('continueHint');
+            
+            dialogueText.innerHTML = dialogPages[currentPage];
+            pageIndicator.innerText = `Pág ${currentPage + 1}/${dialogPages.length}`;
+
+            // Si llegamos a la página 7 (índice 6)
+            if (currentPage === 6) {
+                specialBtnContainer.classList.remove('hidden');
+                continueHint.innerText = "Toca para finalizar ✕";
+                triggerCelebration();
+            } else {
+                specialBtnContainer.classList.add('hidden');
+                continueHint.innerText = "Toca para continuar ➔";
+            }
+        }
+
+        // Cierra el diálogo y retorna la cámara
+        function closeDialogue() {
+            const wrapper = document.getElementById('viewport-wrapper');
+            const bubble = document.getElementById('speechBubble');
+            const actionBtn = document.getElementById('actionBtn');
+
+            wrapper.style.transform = 'scale(1) translateY(0)';
+            isDialogOpen = false;
+            actionBtn.innerText = "✨ Presiona aquí para hablar con Mérida ✨";
+
+            setTimeout(() => {
+                bubble.classList.add('hidden');
+                currentPage = 0;
+            }, 400);
+        }
+
+        // Botón inferior
+        function handleBtnClick() {
+            if (!isDialogOpen) {
+                startDialogue();
+            } else {
+                nextPage();
+            }
+        }
+
+        // Partículas mágicas de fondo
+        function createParticles() {
+            const container = document.getElementById('particles-container');
+            const particleCount = 20;
+
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                
+                const size = Math.random() * 12 + 4;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.left = `${Math.random() * 100}%`;
+                
+                particle.style.animationDuration = `${Math.random() * 5 + 4}s`;
+                particle.style.animationDelay = `${Math.random() * 5}s`;
+                
+                if (Math.random() > 0.5) {
+                    particle.style.background = 'rgba(255, 223, 128, 0.7)';
+                    particle.style.boxShadow = '0 0 8px rgba(255, 215, 0, 0.8)';
+                } else {
+                    particle.style.background = 'rgba(255, 255, 255, 0.8)';
+                    particle.style.boxShadow = '0 0 6px rgba(255, 255, 255, 0.9)';
+                }
+
+                container.appendChild(particle);
+            }
+        }
+
+        window.onload = function() {
+            createParticles();
+        };
+    </script>
+</body>
+</html>
